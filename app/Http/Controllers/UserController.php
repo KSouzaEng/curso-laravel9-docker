@@ -5,9 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Http\Requests\FormUpdateCreateRequest;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
+
+    protected $model;
+
+    public function __construct(User $user)
+    {
+        $this->model = $user;
+    }
+
     public function index(Request $request){
 
         $search = $request->search;
@@ -18,7 +27,9 @@ class UserController extends Controller
             $query->where('email',$search);
             $query->orwhere("name","LIKE","%{$search}%");
             }
-        })->get();
+        })
+        ->with('comments')
+        ->paginate(1);
         // $users = User::where()->get();
 
      return view('users.index',compact('users'));
@@ -42,13 +53,20 @@ class UserController extends Controller
     }
     public function store(FormUpdateCreateRequest $request){
 
-            $user = User::create([
+        $data = $request->all();
+        $data['password'] = bcrypt($request->password);
 
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => bcrypt($request->password)
-            ]);
-            return redirect()->route('users.index');
+        if ($request->image) {
+            $data['image'] = $request->image->store('users');
+            // $extension = $request->image->getClientOriginalExtension();
+            // $data['image'] = $request->image->storeAs('users', now() . ".{$extension}");
+        }
+
+        $this->model->create($data);
+
+        // return redirect()->route('users.show', $user->id);
+        return redirect()->route('users.index');
+
 
     }
 
@@ -63,21 +81,26 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request,$id){
-
-        $user = User::find($id);
-
-        if(!$user){
-            return redirect()->route('users.index');
-        }else{
-            $user = User::where('id',$id)->update([
-
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => bcrypt($request->password)
-            ]);
+    public function update(FormUpdateCreateRequest $request, $id)
+    {
+        if (!$user = $this->model->find($id))
             return redirect()->route('users.index');
 
+        $data = $request->only('name', 'email');
+        if ($request->password)
+            $data['password'] = bcrypt($request->password);
+
+        if ($request->image) {
+            if ($user->image && Storage::exists($user->image)) {
+                Storage::delete($user->image);
+            }
+
+            $data['image'] = $request->image->store('users');
         }
+
+        $user->update($data);
+
+        return redirect()->route('users.index');
     }
+
 }
