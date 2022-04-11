@@ -9,15 +9,8 @@ git clone https://github.com/KSouzaEng/curso-laravel9-docker.git
 ```
 
 ```sh
-cd laravel9/
+cd curso-laravel9-docker/
 ```
-
-
-Alterne para a branch laravel 8.x
-```sh
-git checkout laravel-9-com-php-8
-```
-
 
 Remova o versionamento
 ```sh
@@ -34,7 +27,7 @@ cp .env.example .env
 
 Atualize as variáveis de ambiente do arquivo .env
 ```dosini
-APP_NAME=EspecializaTi
+APP_NAME=DOCKER
 APP_URL=http://localhost:8180
 
 DB_CONNECTION=mysql
